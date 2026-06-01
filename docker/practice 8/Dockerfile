@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-ENV LOG_LEVEL=DEBUG
+ENV LOG_LEVEL=PROD
 
 COPY app.py .
 
@@ -12,3 +12,4 @@ USER 1001
 EXPOSE 8080
 
 CMD ["python", "app.py"]
+
