@@ -1,18 +1,16 @@
 version: '3.8'
 
 services:
-  # 1. Крашится из-за отсутствия конфига
+  # 1. Крашится из-за отсутствия конфига  Решение:(Сделал копию конфига с верным именем)
   app1:
     image: nginx:alpine
     container_name: app1
     ports:
       - "8080:80"
     volumes:
-      # ПРОБЛЕМА: Файл не существует
       - ./config/app1.conf:/etc/nginx/conf.d/default.conf
-    # ПРОБЛЕМА: Нет обязательной переменной ENV_REQUIRED
 
-  # 2. Конфликт портов - оба на 80
+  # 2. Конфликт портов - оба на 80   Решение:(Поменял порт на незанятый 8081)
   app2:
     image: nginx:alpine
     container_name: app2
@@ -20,36 +18,33 @@ services:
       # ПРОБЛЕМА: Порт 8080 уже занят app1
       - "8081:80"
 
-  # 3. Read-only volume где нужен write
+  # 3. Read-only volume где нужен write  Решение:(Убрал :ro)
   app3:
     image: alpine:latest
     container_name: app3
     command: sh -c "echo 'test' > /data/test.txt && cat /data/test.txt"
     volumes:
-      # ПРОБЛЕМА: read-only, но пытается записать
       - ./data:/data
 
-  # 4. Exit code 0 при ошибке (контейнер падает, но Docker думает что всё ок)
+  # 4. Exit code 0 при ошибке (контейнер падает, но Docker думает что всё ок)    Решение (указал set -e и убрал || exit 0   Так же настроил пинг на контейцнер app2)
   app4:
     image: alpine:latest
     container_name: app4
     command: sh -c "set -e; ping app2"
-    # ПРОБЛЕМА: exit 0 при ошибке - Docker не знает что проблема
 
-  # 5. Бесконечный restart loop
+  # 5. Бесконечный restart loop Решение:(Указываем no что бы при ошибке контейнер не запускался)
   app5:
     image: alpine:latest
     container_name: app5
     command: sh -c "exit 1"
     restart: no
-    # ПРОБЛЕМА: restart always + сразу падает = бесконечный loop
+  
 
-  # 6. Отсутствует обязательная переменная
+  # 6. Отсутствует обязательная переменная   Решение:(Указал переменную для с паролем БД но так делать нельзя, нужно использовать Build secrets)
   app6:
     image: postgres:15-alpine
     container_name: app6
     environment: 
       - POSTGRES_PASSWORD=secret
-    # ПРОБЛЕМА: POSTGRES_PASSWORD обязательна, но не задана
     ports:
       - "5432:5432"
